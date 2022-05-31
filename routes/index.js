@@ -93,7 +93,7 @@ router.post('/SignUpOrganizer',async function(req, res){
   const data = req.body;
 
   query = `select CONTACT1 from organizerdata where CONTACT1=?`;
-  var chk = await db.query(query,data.phone);
+  var chk = await db.query(query,data.contact1);
   
   if(chk[0].length>0){
 
@@ -115,7 +115,7 @@ router.post('/SignUpOrganizer',async function(req, res){
   
   const hash=await bcrypt.hash(data.password,10);
   query=`INSERT INTO organizerdata VALUES(?)`;
-  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,data.rating]])
+  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,0.0]])
   return res.status(200).send({
     message:'Signed Up successfully. Your Org. ID is : '+data.orgId,
     flag:'success'
