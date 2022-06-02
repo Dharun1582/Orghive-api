@@ -4,37 +4,27 @@ const db=require('../data/database');
 const bcrypt=require('bcryptjs');
 import cryptoRandomString from 'crypto-random-string';
 
-/* GET home page. */
-// router.get('/', function(req, res, next) {
-//   res.render('index', { title: 'Express' });
-// });
-
 router.post('/SignUpCustomer',async function(req, res) {
-  // console.log("jsnv");
   const data=req.body;
-  // console.log(data);
   var query=`select USERNAME from customerdata where USERNAME=?`;
   var chk=await db.query(query,data.userName);
 
   if(chk[0].length>0){
-    console.log("hiii");
     return res.status(409).send({
       message:'Username already exists',
       flag:'danger'
-    })
+    });
   }
 
   query=`select PHONE from customerdata where PHONE=?`;
   var chk=await db.query(query,data.phone);
   
   if(chk[0].length>0){
-
     return res.status(409).send({
       message:'Phone number already exists',
       flag:'danger'
-    })
+    });
   }
-
 
   query=`select EMAIL from customerdata where EMAIL=?`;
   chk=await db.query(query,data.email);
@@ -43,7 +33,7 @@ router.post('/SignUpCustomer',async function(req, res) {
     return res.status(409).send({
       message:'Email already exists',
       flag:'danger'
-    })
+    });
   }
 
   data.dob=data.dob.slice(0,10);
@@ -54,7 +44,7 @@ router.post('/SignUpCustomer',async function(req, res) {
   return res.status(200).send({
     message:'Signed Up successfully',
     flag:'success'
-  })
+  });
 });
 
 router.post('/loginCustomer',async function(req, res) {
@@ -66,7 +56,7 @@ router.post('/loginCustomer',async function(req, res) {
     return res.status(401).send({
       message:'Username does not exist',
       flag:'danger'
-    })
+    });
   }
 
   console.log(val[0][0]);
@@ -76,12 +66,13 @@ router.post('/loginCustomer',async function(req, res) {
     return res.status(200).send({
       message:'Login Successful',
       flag:'success'
-    })
-  }else{
+    });
+  }
+  else{
     return res.status(401).send({
       message:'Invalid Password',
       flag:'danger'
-    })
+    });
   }
   
 });
@@ -93,11 +84,10 @@ router.post('/SignUpOrganizer',async function(req, res){
   var chk = await db.query(query,data.contact1);
   
   if(chk[0].length>0){
-
     return res.status(409).send({
       message:'Phone number already exists',
       flag:'danger'
-    })
+    });
   }
 
   query = `select EMAIL from organizerdata where EMAIL=?`;
@@ -107,21 +97,49 @@ router.post('/SignUpOrganizer',async function(req, res){
     return res.status(409).send({
       message:'Email already exists',
       flag:'danger'
-    })
+    });
   }
   
   const hash=await bcrypt.hash(data.password,10);
   query=`INSERT INTO organizerdata VALUES(?)`;
-  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,0.0]])
+  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,0.0]]);
+  for (let key in data.eventsdata){
+    if (data.eventsdata[key]){
+      query=`INSERT INTO organizerevents VALUES(?)`;
+      await db.query(query,[[data.orgId,key]]);
+    }
+  }
+  
   return res.status(200).send({
     message:'Signed Up successfully. Your Org. ID is : '+data.orgId,
     flag:'success'
-  })
+  });
 });
 
-
 router.post('/loginOrganizer',async function(req, res) {
-  
+  const data=req.body;
+  var query=`SELECT PASSWORD FROM organizerdata where ORGID=?`;
+  const val=await db.query(query,data.orgId);
+  if(val[0].length==0){
+    return res.status(401).send({
+      message:'Organiser ID does not exist',
+      flag:'danger'
+    });
+  }
+
+  const ispassvalid=await bcrypt.compare(data.password,val[0][0].PASSWORD);
+  if(ispassvalid){
+    return res.status(200).send({
+      message:'Login Successful',
+      flag:'success'
+    });
+  }
+  else{
+    return res.status(401).send({
+      message:'Invalid Password! Try Again',
+      flag:'danger'
+    });
+  }
   
 });
 
