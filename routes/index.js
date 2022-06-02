@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const db=require('../data/database');
 const bcrypt=require('bcryptjs');
+import cryptoRandomString from 'crypto-random-string';
 
 /* GET home page. */
 // router.get('/', function(req, res, next) {
@@ -123,6 +124,29 @@ router.post('/loginOrganizer',async function(req, res) {
   
   
 });
+
+
+router.post('/createEventCustomer',async function(req,res){
+  const data=req.body;
+  console.log(data);
+  // res.send('uohiuh')
+  data.fromdate=data.fromdate.slice(0,10);
+  data.todate=data.todate.slice(0,10);
+  data.budget-parseInt(data.budget);
+  var query=`INSERT INTO event VALUES(?)`;
+  while (true){
+    var query2=`SELECT EVENTID FROM event WHERE EVENTID='${data.eventID}'`;
+    var x=await db.query(query2);
+    console.log(x);
+    if(x[0].length==0){
+      break;
+    }else{
+        data.eventID='E'+cryptoRandomString({length: 6, type: 'alphanumeric'});
+    }
+  }
+  await db.query(query,[[data.eventID,data.username,data.eventname,data.fromdate,data.todate,data.preferredlocation,data.budget,data.food,data.description]])
+  // res.status(200)
+})
 
 
 module.exports = router;
