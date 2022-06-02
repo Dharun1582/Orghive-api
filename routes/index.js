@@ -36,13 +36,14 @@ router.post('/SignUpCustomer',async function(req, res) {
   }
 
   data.dob=data.dob.slice(0,10);
+  console.log(data.dob);
   const hash=await bcrypt.hash(data.password,10);
   query=`INSERT INTO customerdata VALUES(?)`;
   await db.query(query,[[data.userName,data.firstName,data.lastName,data.address,data.phone,data.email,data.dob,data.aadhar,hash]])
   return res.status(200).send({
     message:'Signed Up successfully',
     flag:'success'
-  }); 
+  });
 });
 
 router.post('/loginCustomer',async function(req, res) {
@@ -77,7 +78,7 @@ router.post('/loginCustomer',async function(req, res) {
 
 router.post('/SignUpOrganizer',async function(req, res){
   const data = req.body;
-
+  console.log(data);
   query = `select CONTACT1 from organizerdata where CONTACT1=?`;
   var chk = await db.query(query,data.contact1);
   
