@@ -1,8 +1,19 @@
+// import cryptoRandomString from 'crypto-random-string';
+
 var express = require('express');
 var router = express.Router();
 const db=require('../data/database');
 const bcrypt=require('bcryptjs');
-import cryptoRandomString from 'crypto-random-string';
+const Crypto = require('crypto')
+
+function randomString(size = 6) {  
+  return Crypto
+    .randomBytes(size)
+    .toString('base64')
+    .slice(0, size)
+}
+
+
 
 router.post('/SignUpCustomer',async function(req, res) {
   const data=req.body;
@@ -120,6 +131,7 @@ router.post('/loginOrganizer',async function(req, res) {
   const data=req.body;
   var query=`SELECT PASSWORD FROM organizerdata where ORGID=?`;
   const val=await db.query(query,data.orgId);
+  console.log(val);
   if(val[0].length==0){
     return res.status(401).send({
       message:'Organiser ID does not exist',
@@ -159,7 +171,7 @@ router.post('/createEventCustomer',async function(req,res){
     if(x[0].length==0){
       break;
     }else{
-        data.eventID='E'+cryptoRandomString({length: 6, type: 'alphanumeric'});
+        data.eventID='E'+randomString();
     }
   }
   await db.query(query,[[data.eventID,data.username,data.eventname,data.fromdate,data.todate,data.preferredlocation,data.budget,data.food,data.description]])
