@@ -159,15 +159,19 @@ router.post('/loginOrganizer',async function(req, res) {
 router.post('/createEventCustomer',async function(req,res){
   const data=req.body;
   console.log(data);
-  // res.send('uohiuh')
+
+
+
   data.fromdate=data.fromdate.slice(0,10);
-  data.todate=data.todate.slice(0,10);
+  if(data.todate!=null){
+    data.todate=data.todate.slice(0,10);
+  }
   data.budget-parseInt(data.budget);
   var query=`INSERT INTO event VALUES(?)`;
   while (true){
     var query2=`SELECT EVENTID FROM event WHERE EVENTID='${data.eventID}'`;
     var x=await db.query(query2);
-    console.log(x);
+    // console.log(x);
     if(x[0].length==0){
       break;
     }else{
@@ -175,8 +179,37 @@ router.post('/createEventCustomer',async function(req,res){
     }
   }
   await db.query(query,[[data.eventID,data.username,data.eventname,data.fromdate,data.todate,data.preferredlocation,data.budget,data.food,data.description]])
-  // res.status(200)
+  // // res.status(200)
+
+  var arr=data.orgdata;
+
+  var newarr=arr.map((item,i)=>{
+    return {...item,eventID:data.eventID};
+  })
+
+  var query3=`INSERT INTO orgreq VALUES(?)`;
+
+  newarr.map(async (item,i)=>{
+    await db.query(query3,[[data.username,item.orgid,item.eventID]]);
+  })
+
+  res.status(200).send({
+    message:'Event requested successfully',
+    flag:'success'
+  })
 })
 
+
+router.post('/getOrganizerDataCreateEventCustomer',async function(req,res){
+  const data=req.body;
+  const eventname=data.eventname;
+
+  var query=`SELECT * FROM orghive.organizerdata where ORGID in (SELECT ORGID FROM orghive.organizerevents WHERE EVNT = '${eventname}')`;
+  const response=await db.query(query);
+  console.log(response);
+  res.status(200).send(response[0])
+
+
+})
 
 module.exports = router;
