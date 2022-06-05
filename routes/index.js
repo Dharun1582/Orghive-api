@@ -51,7 +51,7 @@ router.post('/SignUpCustomer',async function(req, res) {
   console.log(data.dob);
   const hash=await bcrypt.hash(data.password,10);
   query=`INSERT INTO customerdata VALUES(?)`;
-  await db.query(query,[[data.userName,data.firstName,data.lastName,data.address,data.phone,data.email,data.dob,data.aadhar,hash]])
+  await db.query(query,[[data.userName,data.firstName,data.lastName,data.address,data.phone,data.email,data.dob,data.aadhar,hash,0]])
   return res.status(200).send({
     message:'Signed Up successfully',
     flag:'success'
@@ -209,7 +209,15 @@ router.post('/getOrganizerDataCreateEventCustomer',async function(req,res){
   console.log(response);
   res.status(200).send(response[0])
 
+})
 
+router.post('/getCustomerProfile',async function(req,res){
+  const username=req.body.username;
+  console.log(username);
+  var query=`SELECT * FROM customerdata where USERNAME='${username}'`;
+  const resp=await db.query(query);
+  console.log(resp);
+  res.status(200).send(resp[0][0])
 })
 
 module.exports = router;
