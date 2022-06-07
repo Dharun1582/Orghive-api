@@ -113,7 +113,7 @@ router.post('/SignUpOrganizer',async function(req, res){
   
   const hash=await bcrypt.hash(data.password,10);
   query=`INSERT INTO organizerdata VALUES(?)`;
-  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,0.0]]);
+  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,0.0,0]]);
   for (let key in data.eventsdata){
     if (data.eventsdata[key]){
       query=`INSERT INTO organizerevents VALUES(?)`;
@@ -206,18 +206,113 @@ router.post('/getOrganizerDataCreateEventCustomer',async function(req,res){
 
   var query=`SELECT * FROM orghive.organizerdata where ORGID in (SELECT ORGID FROM orghive.organizerevents WHERE EVNT = '${eventname}')`;
   const response=await db.query(query);
-  console.log(response);
+  // console.log(response);
   res.status(200).send(response[0])
 
 })
 
 router.post('/getCustomerProfile',async function(req,res){
   const username=req.body.username;
-  console.log(username);
+  // console.log(username);
   var query=`SELECT * FROM customerdata where USERNAME='${username}'`;
+  const resp=await db.query(query);
+  // console.log(resp);
+  res.status(200).send(resp[0][0])
+})
+
+router.post('/getOrganizerProfile',async function(req,res){
+  const orgid=req.body.orgid;
+  // console.log(username);
+  var query=`SELECT * FROM organizerdata where orgid='${orgid}'`;
   const resp=await db.query(query);
   console.log(resp);
   res.status(200).send(resp[0][0])
 })
+
+
+
+router.post('/addWallet',async function(req,res){
+  const amt=req.body.amt;
+  const username=req.body.username;
+  // console.log(amt);
+  var query=`UPDATE customerdata SET WALLET=WALLET+${amt} where USERNAME='${username}'`;
+  await db.query(query);
+  res.status(200).send({
+    message:'Amount added successfully',
+    flag:'success'
+  })
+})
+
+router.post('/progressCustomer',async function(req,res){
+  const eventid=req.body.eventid;
+
+  var query=`SELECT * FROM msg WHERE EVENTID='${eventid}' ORDER BY CREATEDAT DESC`;
+  const result= await db.query(query);
+  // console.log(result[0]);
+  res.status(200).send(result[0]);
+})
+
+router.post('/addProgressOrganizer',async function(req,res){
+
+  const eventid=req.body.eventid;
+  const addprogress=req.body.addprogress;
+
+  var query= `SELECT ORGID,USERNAME FROM eventstat WHERE EVENTID='${eventid}'`;
+  const result1=await db.query(query);
+  const orgid=result1[0][0].ORGID;
+  const username=result1[0][0].USERNAME;
+  console.log(orgid);
+  console.log(username);
+  query =`INSERT INTO msg (ORGID,USERNAME,EVENTID,MSG) VALUES ('${orgid}','${username}','${eventid}','${addprogress}')`
+  await db.query(query);
+  res.status(200).send({
+    message:'Progress Added Successfully',
+    flag:'success'
+  })
+})
+
+router.post('/eventsInProgressCustomer',async function(req,res){
+  const username=req.body.username;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.USERNAME='${username}'`;
+
+  const result1=await db.query(query);
+  res.status(200).send({
+    data:result1[0]
+  })
+})
+
+router.post('/eventsCompleteCustomer',async function(req,res){
+  const username=req.body.username;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.USERNAME='${username}'`;
+  
+  const result1=await db.query(query);
+  res.status(200).send({
+    data:result1[0]
+  })
+})
+
+router.post('/eventsInProgressOrganizer',async function(req,res){
+  const orgid=req.body.orgid;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.ORGID='${orgid}'`;
+
+  const result1=await db.query(query);
+  console.log(result1);
+  res.status(200).send({
+    data:result1[0]
+  })
+})
+
+
+router.post('/eventsCompleteOrganizer',async function(req,res){
+  const orgid=req.body.orgid;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.ORGID='${orgid}'`;
+  
+  const result1=await db.query(query);
+  res.status(200).send({
+    data:result1[0]
+  })
+})
+
+
 
 module.exports = router;
