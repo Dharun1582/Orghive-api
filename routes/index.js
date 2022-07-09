@@ -2,11 +2,14 @@
 
 var express = require('express');
 var router = express.Router();
-const db=require('../data/database');
-const bcrypt=require('bcryptjs');
-const Crypto = require('crypto')
+const db = require('../data/database');
+const bcrypt = require('bcryptjs');
+// const multer = require('multer');
+var path = require('path');
+const Crypto = require('crypto');
+const e = require('express');
 
-function randomString(size = 6) {  
+function randomString(size = 6) {
   return Crypto
     .randomBytes(size)
     .toString('base64')
@@ -14,100 +17,99 @@ function randomString(size = 6) {
 }
 
 
+router.post('/SignUpCustomer', async function (req, res) {
+  const data = req.body;
+  var query = `select USERNAME from customerdata where USERNAME=?`;
+  var chk = await db.query(query, data.userName);
 
-router.post('/SignUpCustomer',async function(req, res) {
-  const data=req.body;
-  var query=`select USERNAME from customerdata where USERNAME=?`;
-  var chk=await db.query(query,data.userName);
-
-  if(chk[0].length>0){
+  if (chk[0].length > 0) {
     return res.status(409).send({
-      message:'Username already exists',
-      flag:'danger'
+      message: 'Username already exists',
+      flag: 'danger'
     });
   }
 
-  query=`select PHONE from customerdata where PHONE=?`;
-  var chk=await db.query(query,data.phone);
-  
-  if(chk[0].length>0){
+  query = `select PHONE from customerdata where PHONE=?`;
+  var chk = await db.query(query, data.phone);
+
+  if (chk[0].length > 0) {
     return res.status(409).send({
-      message:'Phone number already exists',
-      flag:'danger'
+      message: 'Phone number already exists',
+      flag: 'danger'
     });
   }
 
-  query=`select EMAIL from customerdata where EMAIL=?`;
-  chk=await db.query(query,data.email);
+  query = `select EMAIL from customerdata where EMAIL=?`;
+  chk = await db.query(query, data.email);
 
-  if(chk[0].length>0){
+  if (chk[0].length > 0) {
     return res.status(409).send({
-      message:'Email already exists',
-      flag:'danger'
+      message: 'Email already exists',
+      flag: 'danger'
     });
   }
 
-  data.dob=data.dob.slice(0,10);
+  data.dob = data.dob.slice(0, 10);
   console.log(data.dob);
-  const hash=await bcrypt.hash(data.password,10);
-  query=`INSERT INTO customerdata VALUES(?)`;
-  await db.query(query,[[data.userName,data.firstName,data.lastName,data.address,data.phone,data.email,data.dob,data.aadhar,hash,0]])
+  const hash = await bcrypt.hash(data.password, 10);
+  query = `INSERT INTO customerdata VALUES(?)`;
+  await db.query(query, [[data.userName, data.firstName, data.lastName, data.address, data.phone, data.email, data.dob, data.aadhar, hash, 0]])
   return res.status(200).send({
-    message:'Signed Up successfully',
-    flag:'success'
+    message: 'Signed Up successfully',
+    flag: 'success'
   });
 });
 
-router.post('/loginCustomer',async function(req, res) {
+router.post('/loginCustomer', async function (req, res) {
   console.log(req.body);
-  const data=req.body;
-  var query=`SELECT PASSWORD FROM customerdata where USERNAME=?`;
-  const val=await db.query(query,data.userName);
-  if(val[0].length==0){
+  const data = req.body;
+  var query = `SELECT PASSWORD FROM customerdata where USERNAME=?`;
+  const val = await db.query(query, data.userName);
+  if (val[0].length == 0) {
     return res.status(401).send({
-      message:'Username does not exist',
-      flag:'danger'
+      message: 'Username does not exist',
+      flag: 'danger'
     });
   }
 
   console.log(val[0][0]);
 
-  const ispassvalid=await bcrypt.compare(data.password,val[0][0].PASSWORD);
-  if(ispassvalid){
+  const ispassvalid = await bcrypt.compare(data.password, val[0][0].PASSWORD);
+  if (ispassvalid) {
     return res.status(200).send({
-      message:'Login Successful',
-      flag:'success'
+      message: 'Login Successful',
+      flag: 'success'
     });
   }
-  else{
+  else {
     return res.status(401).send({
-      message:'Invalid Password',
-      flag:'danger'
+      message: 'Invalid Password',
+      flag: 'danger'
     });
   }
-  
+
 });
 
-router.post('/SignUpOrganizer',async function(req, res){
+router.post('/SignUpOrganizer', async function (req, res) {
   const data = req.body;
   console.log(data);
   query = `select CONTACT1 from organizerdata where CONTACT1=?`;
-  var chk = await db.query(query,data.contact1);
-  
-  if(chk[0].length>0){
+  var chk = await db.query(query, data.contact1);
+
+  if (chk[0].length > 0) {
     return res.status(409).send({
-      message:'Phone number already exists',
-      flag:'danger'
+      message: 'Phone number already exists',
+      flag: 'danger'
     });
   }
 
   query = `select EMAIL from organizerdata where EMAIL=?`;
-  chk = await db.query(query,data.email);
+  chk = await db.query(query, data.email);
 
-  if(chk[0].length>0){
+  if (chk[0].length > 0) {
     return res.status(409).send({
-      message:'Email already exists',
-      flag:'danger'
+      message: 'Email already exists',
+      flag: 'danger'
     });
   }
   
@@ -120,85 +122,83 @@ router.post('/SignUpOrganizer',async function(req, res){
       await db.query(query,[[data.orgId,key]]);
     }
   }
-  
+
   return res.status(200).send({
-    message:'Signed Up successfully. Your Org. ID is : '+data.orgId,
-    flag:'success'
+    message: 'Signed Up successfully. Your Org. ID is : ' + data.orgId,
+    flag: 'success'
   });
 });
 
-router.post('/loginOrganizer',async function(req, res) {
-  const data=req.body;
-  var query=`SELECT PASSWORD FROM organizerdata where ORGID=?`;
-  const val=await db.query(query,data.orgId);
-  console.log(val);
-  if(val[0].length==0){
+router.post('/loginOrganizer', async function (req, res) {
+  const data = req.body;
+  var query = `SELECT PASSWORD FROM organizerdata where ORGID=?`;
+  const val = await db.query(query, data.orgId);
+  if (val[0].length == 0) {
     return res.status(401).send({
-      message:'Organiser ID does not exist',
-      flag:'danger'
+      message: 'Organiser ID does not exist',
+      flag: 'danger'
     });
   }
 
-  const ispassvalid=await bcrypt.compare(data.password,val[0][0].PASSWORD);
-  if(ispassvalid){
+  const ispassvalid = await bcrypt.compare(data.password, val[0][0].PASSWORD);
+  if (ispassvalid) {
     return res.status(200).send({
-      message:'Login Successful',
-      flag:'success'
+      message: 'Login Successful',
+      flag: 'success'
     });
   }
-  else{
+  else {
     return res.status(401).send({
-      message:'Invalid Password! Try Again',
-      flag:'danger'
+      message: 'Invalid Password! Try Again',
+      flag: 'danger'
     });
   }
-  
 });
 
-
-router.post('/createEventCustomer',async function(req,res){
-  const data=req.body;
+router.post('/createEventCustomer', async function (req, res) {
+  const data = req.body;
   console.log(data);
 
-
-
-  data.fromdate=data.fromdate.slice(0,10);
-  if(data.todate!=null){
-    data.todate=data.todate.slice(0,10);
+  data.fromdate = data.fromdate.slice(0, 10);
+  if (data.todate != null) {
+    data.todate = data.todate.slice(0, 10);
   }
-  data.budget-parseInt(data.budget);
-  var query=`INSERT INTO event VALUES(?)`;
-  while (true){
-    var query2=`SELECT EVENTID FROM event WHERE EVENTID='${data.eventID}'`;
-    var x=await db.query(query2);
+  data.budget = parseInt(data.budget);
+  var query = `INSERT INTO event VALUES(?)`;
+  while (true) {
+    var query2 = `SELECT EVENTID FROM event WHERE EVENTID='${data.eventID}'`;
+    var x = await db.query(query2);
     // console.log(x);
-    if(x[0].length==0){
+    if (x[0].length == 0) {
       break;
-    }else{
-        data.eventID='E'+randomString();
+    } else {
+      data.eventID = 'E' + randomString();
     }
   }
-  await db.query(query,[[data.eventID,data.username,data.eventname,data.fromdate,data.todate,data.preferredlocation,data.budget,data.food,data.description]])
+  await db.query(query, [[data.eventID, data.username, data.eventname, data.fromdate, data.todate, data.preferredlocation, data.budget, data.food, data.description]])
   // // res.status(200)
 
-  var arr=data.orgdata;
+  var arr = data.orgdata;
 
-  var newarr=arr.map((item,i)=>{
-    return {...item,eventID:data.eventID};
+  var newarr = arr.map((item, i) => {
+    return { ...item, eventID: data.eventID };
   })
 
-  var query3=`INSERT INTO orgreq VALUES(?)`;
+  var query3 = `INSERT INTO orgreq VALUES(?)`;
 
-  newarr.map(async (item,i)=>{
-    await db.query(query3,[[data.username,item.orgid,item.eventID]]);
+  newarr.map(async (item, i) => {
+    await db.query(query3, [[data.username, item.orgid, item.eventID]]);
   })
 
   res.status(200).send({
-    message:'Event requested successfully',
-    flag:'success'
+    message: 'Event requested successfully',
+    flag: 'success'
   })
-})
+});
 
+// router.post('/getOrganizerDataCreateEventCustomer', async function (req, res) {
+//   const data = req.body;
+//   const eventname = data.eventname;
 
 router.post('/getOrganizerDataCreateEventCustomer',async function(req,res){
   const data=req.body;
@@ -225,9 +225,19 @@ router.post('/getOrganizerProfile',async function(req,res){
   // console.log(username);
   var query=`SELECT * FROM organizerdata where orgid='${orgid}'`;
   const resp=await db.query(query);
-  console.log(resp);
+  console.log(resp[0]);
+  // var query = `SELECT * FROM orghive.organizerdata where ORGID in (SELECT ORGID FROM orghive.organizerevents WHERE EVNT = '${eventname}')`;
+  // const response = await db.query(query);
+  // console.log(response);
+  res.status(200).send(resp[0][0]);
+});
+
+router.post('/getCustomerProfile', async function (req, res) {
+  const username = req.body.username;
+  var query = `SELECT * FROM customerdata where USERNAME='${username}'`;
+  const resp = await db.query(query);
   res.status(200).send(resp[0][0])
-})
+});
 
 
 
@@ -315,4 +325,181 @@ router.post('/eventsCompleteOrganizer',async function(req,res){
 
 
 
+module.exports = router;
+router.post('/getEventDetails', async function (req, res) {
+  const data = req.body;
+  const orgid = data.ORGID;
+  var query = `SELECT * FROM orgreq o,event e, customerdata c WHERE o.EVENTID=e.EVENTID AND e.USERNAME=c.USERNAME AND ORGID=(?)`;
+  var x = await db.query(query, [[orgid]]);
+  if (x[0].length > 0) {
+    res.status(200).send(x[0]);
+  }
+  else {
+    res.status(401).send();
+  }
+});
+
+router.post('/deleteReqOrg', async function (req, res) {
+  const EVNT = req.body.EVENTID;
+  const ORG = req.body.ORGID;
+  var query = `SELECT * FROM orgreq WHERE ORGID='${ORG}'`
+  const response = await db.query(query);
+  var query2 = `DELETE FROM orgreq WHERE ORGID='${ORG}' AND EVENTID='${EVNT}'`;
+  const resp = await db.query(query2);
+  res.status(200).send(response[0]);
+});
+
+router.post('/eventDetail', async function (req, res) {
+  const data = req.body;
+  const eventid = data.EVENTID;
+  var query = `SELECT * FROM event e, customerdata c WHERE EVENTID='${eventid}' AND e.USERNAME=c.USERNAME`;
+  var x = await db.query(query);
+  if (x[0].length > 0) {
+    res.status(200).send(x[0]);
+  }
+  else {
+    res.status(401).send();
+  }
+});
+
+router.post('/acceptReqOrg', async(req,res)=>{
+  try{
+  const data = req.body;
+  console.log(data);
+  const eventid = data.EVENTID;
+  const orgid = data.ORGID; 
+  const newBudget = data.BUDGET;
+  const description = data.DESCRIPTION;
+  const username = data.USERNAME;
+  var query = `INSERT INTO custreq VALUES('${orgid}','${username}',${newBudget},'${eventid}','${description}')`;
+  var x = await db.query(query);
+  var query2 = `DELETE FROM orgreq WHERE ORGID='${orgid}' AND EVENTID='${eventid}'`;
+  var y = await db.query(query2);
+  res.status(200).send();
+  }
+  catch(err){
+    res.status(200).send();
+  }
+});
+
+router.post('/eventReqDetail', async function (req, res) {
+  const data = req.body;
+  const username = data.USERNAME;
+  var query = `SELECT * FROM custreq c, event e WHERE e.EVENTID=c.EVENTID AND c.USERNAME='${username}'`;
+  var x = await db.query(query);
+  if (x[0].length > 0) {
+    res.status(200).send(x[0]);
+  }
+  else {
+    // res.status(401).send();
+  }
+});
+
+router.post('/deleteReqCust', async function (req, res) {
+  const EVNT = req.body.EVENTID;
+  const ORG = req.body.ORGID;
+  var query2 = `DELETE FROM custreq WHERE ORGID='${ORG}' AND EVENTID='${EVNT}'`;
+  const resp = await db.query(query2);
+  res.status(200).send();
+});
+
+router.post('/acceptReqCust', async(req,res)=>{
+  try{
+    const username=req.body.USERNAME;
+    const eventid=req.body.EVENTID;
+    const orgid=req.body.ORGID;
+    console.log(req.body);
+  // res.status(200).send();
+    var query=`DELETE FROM orgreq WHERE EVENTID='${eventid}'`;
+    await db.query(query);
+
+    query= `SELECT * FROM custreq WHERE ORGID='${orgid}' AND EVENTID='${eventid}' AND USERNAME='${username}'`;
+    const result1=await db.query(query);
+    const obj=result1[0][0];
+
+    query=`DELETE FROM custreq WHERE EVENTID='${eventid}'`;
+    await db.query(query);
+
+    query= `INSERT INTO eventstat VALUES('${eventid}','${orgid}','${username}','${obj.NEWBUDGET}','${obj.DESCRIPTION}','PENDING')`;
+    await db.query(query);
+    
+
+    res.status(200).send({
+      message:'Successfully Accepted',
+      flag:'success'
+    })
+    // console.log(result1[0]);
+
+  }
+  catch(err){
+    // res.status(200).send();
+  }
+});
+
+router.post('/eventOrgDetail',async(req,res)=>{
+  try{
+    console.log(req.body);
+    const orgid=req.body.ORGID;
+    const eventid=req.body.EVENTID;
+    var query= `SELECT * FROM custreq c, organizerdata o WHERE c.EVENTID='${eventid}' AND c.ORGID='${orgid}' AND c.ORGID=o.ORGID`;
+    const resp=await db.query(query);
+    console.log(resp[0][0]);
+    res.send(resp[0])
+
+  }catch(error){
+
+  }
+})
+
+
+router.post('/getToDate',async (req,res) => {
+  try{
+    const eventid=req.body.eventid;
+    console.log(eventid);
+    var query = `SELECT FROMDATE,TODATE FROM event WHERE EVENTID='${eventid}'`;
+    const result1=await db.query(query);
+    var obj=result1[0][0];
+    var findate;
+    if(obj.TODATE==null){
+      findate=obj.FROMDATE;
+    }else{
+      findate=obj.TODATE;
+    }
+    console.log(findate);
+    res.status(200).send({
+      findate:findate
+    })
+  }catch(error){
+  
+  }
+})
+
+
+router.post('/makePayment',async (req,res) => {
+  console.log(req.body);
+  const amt=req.body.amt;
+  const eventid=req.body.eventid;
+  var query=`SELECT ORGID,USERNAME,NEWBUDGET FROM eventstat WHERE EVENTID='${eventid}'`;
+  const result1=await db.query(query);
+  var username=result1[0][0].USERNAME;
+  var orgid=result1[0][0].ORGID;
+  var newbud=result1[0][0].NEWBUDGET;
+
+  query=`UPDATE customerdata SET WALLET=WALLET-${newbud} WHERE USERNAME='${username}'`;
+  var query1=`UPDATE organizerdata SET WALLET=WALLET+${newbud} WHERE ORGID='${orgid}'`;
+  await db.query(query);
+  await db.query(query1);
+
+  query =`UPDATE eventstat SET STATUS='COMPLETE' WHERE EVENTID='${eventid}'`;
+  await db.query(query);
+
+  query=`DELETE FROM msg WHERE EVENTID='${eventid}'`;
+  await db.query(query)
+
+  res.status(200).send({
+    message:'Payment Successful',
+    flag:'success'
+  })
+
+})
 module.exports = router;
