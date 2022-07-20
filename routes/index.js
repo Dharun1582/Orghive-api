@@ -115,7 +115,7 @@ router.post('/SignUpOrganizer', async function (req, res) {
   
   const hash=await bcrypt.hash(data.password,10);
   query=`INSERT INTO organizerdata VALUES(?)`;
-  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,0.0,0]]);
+  await db.query(query,[[data.orgId,data.name,data.manager,data.contact1,data.contact2,data.email,data.address,data.gstin,hash,null,0]]);
   for (let key in data.eventsdata){
     if (data.eventsdata[key]){
       query=`INSERT INTO organizerevents VALUES(?)`;
@@ -237,7 +237,7 @@ router.post('/getCustomerProfile', async function (req, res) {
   var query = `SELECT * FROM customerdata where USERNAME='${username}'`;
   const resp = await db.query(query);
   res.status(200).send(resp[0][0])
-});
+})
 
 
 
@@ -251,6 +251,21 @@ router.post('/addWallet',async function(req,res){
     message:'Amount added successfully',
     flag:'success'
   })
+})
+
+// module.exports = router;
+router.post('/getEventDetails', async function (req, res) {
+  console.log('hscbhdscuvc');
+  const data = req.body;
+  const orgid = data.ORGID;
+  var query = `SELECT * FROM orgreq o,event e, customerdata c WHERE o.EVENTID=e.EVENTID AND e.USERNAME=c.USERNAME AND ORGID=(?)`;
+  var x = await db.query(query, [[orgid]]);
+  if (x[0].length > 0) {
+    res.status(200).send(x[0]);
+  }
+  else {
+    res.status(401).send('error');
+  }
 })
 
 router.post('/progressCustomer',async function(req,res){
@@ -283,7 +298,7 @@ router.post('/addProgressOrganizer',async function(req,res){
 
 router.post('/eventsInProgressCustomer',async function(req,res){
   const username=req.body.username;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.USERNAME='${username}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION,FROMDATE,TODATE  FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.USERNAME='${username}'`;
 
   const result1=await db.query(query);
   res.status(200).send({
@@ -303,7 +318,7 @@ router.post('/eventsCompleteCustomer',async function(req,res){
 
 router.post('/eventsInProgressOrganizer',async function(req,res){
   const orgid=req.body.orgid;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.ORGID='${orgid}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION,FROMDATE,TODATE  FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.ORGID='${orgid}'`;
 
   const result1=await db.query(query);
   console.log(result1);
@@ -325,19 +340,7 @@ router.post('/eventsCompleteOrganizer',async function(req,res){
 
 
 
-module.exports = router;
-router.post('/getEventDetails', async function (req, res) {
-  const data = req.body;
-  const orgid = data.ORGID;
-  var query = `SELECT * FROM orgreq o,event e, customerdata c WHERE o.EVENTID=e.EVENTID AND e.USERNAME=c.USERNAME AND ORGID=(?)`;
-  var x = await db.query(query, [[orgid]]);
-  if (x[0].length > 0) {
-    res.status(200).send(x[0]);
-  }
-  else {
-    res.status(401).send();
-  }
-});
+
 
 router.post('/deleteReqOrg', async function (req, res) {
   const EVNT = req.body.EVENTID;
@@ -478,6 +481,7 @@ router.post('/getToDate',async (req,res) => {
 router.post('/makePayment',async (req,res) => {
   console.log(req.body);
   const amt=req.body.amt;
+  const rating=req.body.rating;
   const eventid=req.body.eventid;
   var query=`SELECT ORGID,USERNAME,NEWBUDGET FROM eventstat WHERE EVENTID='${eventid}'`;
   const result1=await db.query(query);
@@ -485,8 +489,34 @@ router.post('/makePayment',async (req,res) => {
   var orgid=result1[0][0].ORGID;
   var newbud=result1[0][0].NEWBUDGET;
 
+  var ckamt=`SELECT WALLET FROM customerdata where USERNAME='${username}'`;
+  var balres=await db.query(ckamt);
+  var bal=balres[0][0].WALLET;
+  console.log(bal);
+  if(bal<newbud){
+    res.status(409).send({
+      message:'Insufficient Funds,Please add balance',
+      flag:'danger'
+    })
+  }else{
+    
   query=`UPDATE customerdata SET WALLET=WALLET-${newbud} WHERE USERNAME='${username}'`;
   var query1=`UPDATE organizerdata SET WALLET=WALLET+${newbud} WHERE ORGID='${orgid}'`;
+  
+  var query2=`SELECT rating FROM organizerdata WHERE ORGID='${orgid}'`;
+  var ratres=await db.query(query2);
+  var rat=ratres[0][0].rating;
+  console.log(ratres);
+  if(rat){
+    var nr=(rating+parseFloat(rat))/2;
+    var query3=`UPDATE organizerdata SET RATING=${nr} where ORGID='${orgid}'`;
+    await db.query(query3);
+  }else{
+    var query4=`UPDATE organizerdata SET RATING=${rating} where ORGID='${orgid}'`;
+    await db.query(query4);
+
+  }
+  
   await db.query(query);
   await db.query(query1);
 
@@ -500,6 +530,9 @@ router.post('/makePayment',async (req,res) => {
     message:'Payment Successful',
     flag:'success'
   })
+  }
+
+
 
 })
 module.exports = router;
