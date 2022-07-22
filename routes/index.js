@@ -207,7 +207,7 @@ router.post('/getOrganizerDataCreateEventCustomer',async function(req,res){
   var query=`SELECT * FROM orghive.organizerdata where ORGID in (SELECT ORGID FROM orghive.organizerevents WHERE EVNT = '${eventname}')`;
   const response=await db.query(query);
   // console.log(response);
-  res.status(200).send(response[0])
+  res.status(200).send(response[0]);
 
 })
 
@@ -298,7 +298,7 @@ router.post('/addProgressOrganizer',async function(req,res){
 
 router.post('/eventsInProgressCustomer',async function(req,res){
   const username=req.body.username;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION,FROMDATE,TODATE  FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.USERNAME='${username}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION,FROMDATE,TODATE  FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.USERNAME='${username}'`;
 
   const result1=await db.query(query);
   res.status(200).send({
@@ -308,7 +308,7 @@ router.post('/eventsInProgressCustomer',async function(req,res){
 
 router.post('/eventsCompleteCustomer',async function(req,res){
   const username=req.body.username;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.USERNAME='${username}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.USERNAME='${username}'`;
   
   const result1=await db.query(query);
   res.status(200).send({
@@ -318,7 +318,7 @@ router.post('/eventsCompleteCustomer',async function(req,res){
 
 router.post('/eventsInProgressOrganizer',async function(req,res){
   const orgid=req.body.orgid;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION,FROMDATE,TODATE  FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.ORGID='${orgid}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION,FROMDATE,TODATE  FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='PENDING' AND eventstat.ORGID='${orgid}'`;
 
   const result1=await db.query(query);
   console.log(result1);
@@ -330,7 +330,7 @@ router.post('/eventsInProgressOrganizer',async function(req,res){
 
 router.post('/eventsCompleteOrganizer',async function(req,res){
   const orgid=req.body.orgid;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.ORGID='${orgid}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.ORGID='${orgid}'`;
   
   const result1=await db.query(query);
   res.status(200).send({
@@ -374,14 +374,15 @@ router.post('/acceptReqOrg', async(req,res)=>{
   const newBudget = data.BUDGET;
   const description = data.DESCRIPTION;
   const username = data.USERNAME;
-  var query = `INSERT INTO custreq VALUES('${orgid}','${username}',${newBudget},'${eventid}','${description}')`;
+  var query = `INSERT INTO custreq VALUES('${username}','${orgid}','${eventid}',${newBudget},'${description}')`;
   var x = await db.query(query);
   var query2 = `DELETE FROM orgreq WHERE ORGID='${orgid}' AND EVENTID='${eventid}'`;
   var y = await db.query(query2);
+  console.log(res);
   res.status(200).send();
   }
   catch(err){
-    res.status(200).send();
+    res.status(401).send();
   }
 });
 
@@ -426,6 +427,7 @@ router.post('/acceptReqCust', async(req,res)=>{
     query= `INSERT INTO eventstat VALUES('${eventid}','${orgid}','${username}','${obj.NEWBUDGET}','${obj.DESCRIPTION}','PENDING')`;
     await db.query(query);
     
+    
 
     res.status(200).send({
       message:'Successfully Accepted',
@@ -435,7 +437,7 @@ router.post('/acceptReqCust', async(req,res)=>{
 
   }
   catch(err){
-    // res.status(200).send();
+    res.status(401).send();
   }
 });
 
