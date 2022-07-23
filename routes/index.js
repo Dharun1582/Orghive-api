@@ -7,7 +7,19 @@ const bcrypt = require('bcryptjs');
 // const multer = require('multer');
 var path = require('path');
 const Crypto = require('crypto');
-const e = require('express');
+const nodemailer = require('nodemailer');
+const dotenv=require('dotenv');
+dotenv.config();
+const transport=nodemailer.createTransport({
+  service:"gmail",
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth:{
+      user:process.env.USER,
+      pass:process.env.PASS
+  }
+});
 
 function randomString(size = 6) {
   return Crypto
@@ -15,7 +27,6 @@ function randomString(size = 6) {
     .toString('base64')
     .slice(0, size)
 }
-
 
 router.post('/SignUpCustomer', async function (req, res) {
   const data = req.body;
@@ -61,7 +72,7 @@ router.post('/SignUpCustomer', async function (req, res) {
 });
 
 router.post('/loginCustomer', async function (req, res) {
-  console.log(req.body);
+  // console.log(req.body);
   const data = req.body;
   var query = `SELECT PASSWORD FROM customerdata where USERNAME=?`;
   const val = await db.query(query, data.userName);
@@ -88,6 +99,61 @@ router.post('/loginCustomer', async function (req, res) {
     });
   }
 
+});
+
+router.post('/sendMailCust',async function (req,res){
+  const data = req.body;
+  var query = `SELECT USERNAME FROM customerdata where EMAIL=?`;
+  const val = await db.query(query, data.email);
+  if (val[0].length == 0) {
+    return res.status(401).send({
+      message: 'Email does not exist',
+      flag: 'danger'
+    });
+  }
+  else {
+    var mailOptions = {
+      from: 'orghiveinc@gmail.com',
+      to: data.email,
+      subject: 'OTP for Password Reset',
+      html: `<h3>Greetings from OrgHive Inc.!</h3><h2>For the Customer ID : ${val[0][0].USERNAME}</h2><br/><b>The OTP for Password Reset is :</b><h1>${data.code}</h1>Do not share with others.Ignore the OTP, if you remember your Password.<br/><h3>Thank You!</h3>`
+    };
+
+    transport.sendMail(mailOptions, function (err, info) {
+      if (err) {
+        console.log(err);
+        return res.status(401).send({
+          message: 'Error sending mail!',
+          flag: 'danger'
+        });
+      } else {
+        return res.status(200).send({
+          message: 'Email sent successfully! If not found in Inbox, check Spam',
+          flag: 'success'
+        });
+      }
+    });
+  }
+});
+
+router.post('/updatePwCust', async function (req, res) {
+  const data = req.body;
+  const hash = await bcrypt.hash(data.password, 10);
+  var query = "UPDATE customerdata SET PASSWORD=? WHERE EMAIL=?";
+  var result = await db.query(query, [hash, data.email]);
+  console.log(result);
+  if (result[0].affectedRows == 1) {
+    res.status(200).send({
+      message: 'Password Updated successfully!',
+      flag: 'success'
+    });
+  }
+  else {
+    res.status(401).send({
+      message: 'Error updating password! Try Again',
+      flag: 'danger'
+    });
+  }
 });
 
 router.post('/SignUpOrganizer', async function (req, res) {
@@ -194,6 +260,61 @@ router.post('/createEventCustomer', async function (req, res) {
     message: 'Event requested successfully',
     flag: 'success'
   })
+});
+
+router.post('/sendMailOrg',async function (req,res){
+  const data = req.body;
+  var query = `SELECT ORGID FROM organizerdata where EMAIL=?`;
+  const val = await db.query(query, data.email);
+  if (val[0].length == 0) {
+    return res.status(401).send({
+      message: 'Email does not exist',
+      flag: 'danger'
+    });
+  }
+  else {
+    var mailOptions = {
+      from: 'orghiveinc@gmail.com',
+      to: data.email,
+      subject: 'OTP for Password Reset',
+      html: `<h3>Greetings from OrgHive Inc.!</h3><h2>For the Organizer ID : ${val[0][0].ORGID} </h2><br/><b>The OTP for Password Reset is :</b><h1>${data.code}</h1>Do not share with others.Ignore the OTP, if you remember your Password.<br/><h3>Thank You!</h3>`
+    };
+
+    transport.sendMail(mailOptions, function (err, info) {
+      if (err) {
+        console.log(err);
+        return res.status(401).send({
+          message: 'Error sending mail!',
+          flag: 'danger'
+        });
+      } else {
+        return res.status(200).send({
+          message: 'Email sent successfully! If not found in Inbox, check Spam',
+          flag: 'success'
+        });
+      }
+    });
+  }
+});
+
+router.post('/updatePwOrg', async function (req, res) {
+  const data = req.body;
+  const hash = await bcrypt.hash(data.password, 10);
+  var query = "UPDATE organizerdata SET PASSWORD=? WHERE EMAIL=?";
+  var result = await db.query(query, [hash, data.email]);
+  console.log(result);
+  if (result[0].affectedRows == 1) {
+    res.status(200).send({
+      message: 'Password Updated successfully!',
+      flag: 'success'
+    });
+  }
+  else {
+    res.status(401).send({
+      message: 'Error updating password! Try Again',
+      flag: 'danger'
+    });
+  }
 });
 
 // router.post('/getOrganizerDataCreateEventCustomer', async function (req, res) {
