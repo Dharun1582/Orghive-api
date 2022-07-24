@@ -4,7 +4,7 @@ const pool=mysql.createPool({
     host:'localhost',
     database:'orghive',
     user:'root',
-    password:'{123456}'
+    password:'Batman@7'
 })
 
 module.exports=pool;

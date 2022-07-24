@@ -429,7 +429,7 @@ router.post('/eventsInProgressCustomer',async function(req,res){
 
 router.post('/eventsCompleteCustomer',async function(req,res){
   const username=req.body.username;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.USERNAME='${username}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION,FROMDATE,TODATE,BUDGET FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.USERNAME='${username}'`;
   
   const result1=await db.query(query);
   res.status(200).send({
@@ -451,7 +451,8 @@ router.post('/eventsInProgressOrganizer',async function(req,res){
 
 router.post('/eventsCompleteOrganizer',async function(req,res){
   const orgid=req.body.orgid;
-  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.ORGID='${orgid}'`;
+  // var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.ORGID='${orgid}'`;
+  var query=`SELECT eventstat.EVENTID,EVENTNAME,NAME,event.DESCRIPTION,BUDGET,eventstat.USERNAME,FROMDATE,TODATE FROM eventstat,event,organizerdata WHERE eventstat.EVENTID=event.EVENTID AND eventstat.ORGID=organizerdata.ORGID AND eventstat.STATUS='COMPLETE' AND eventstat.ORGID='${orgid}'`;
   
   const result1=await db.query(query);
   res.status(200).send({
